@@ -188,7 +188,7 @@ STATES = ["draft", "open", "closed"]
 STATES = %w(draft open closed)
 ```
 
-* Prefer `%i` to the literal array syntax when you need an array of symbols (and you don't need to maintain Ruby 1.9 compatibility). Apply this rule only to arrays with two or more elements.
+* Prefer `%i` to the literal array syntax when you need an array of symbols (and you don't need to maintain Ruby 1.9 compatibility).
 
 ``` ruby
 # bad
@@ -349,7 +349,7 @@ STATES = %w(draft open closed)
 ```
 
 * Use `%()` for single-line strings which require both interpolation
-  and embedded double-quotes. For multi-line strings, prefer heredocs.
+  and embedded double-quotes. For multi-line strings, use heredocs.
 
 ``` ruby
 # bad (no interpolation needed)
@@ -462,6 +462,38 @@ paragraphs.each do |paragraph|
 end
 ```
 
+* For multi-line strings, use heredocs.
+
+## Numerics
+
+* Add underscores to large numeric literals to improve their readability.
+
+```
+# bad - how many 0s are there?
+num = 1000000
+
+# good - much easier to parse for the human brain
+num = 1_000_000
+```
+
+* Prefer smallcase letters for numeric literal prefixes. `0o` for octal, `0x` for hexadecimal and `0b` for binary. Do not use `0d` prefix for decimal literals.
+
+```
+# bad
+num = 01234
+num = 0O1234
+num = 0X12AB
+num = 0B10101
+num = 0D1234
+num = 0d1234
+
+# good - easier to separate digits from the prefix
+num = 0o1234
+num = 0x12AB
+num = 0b10101
+num = 1234
+```
+
 ## Syntax
 
 * Use `def` with parentheses when there are arguments. Omit the
@@ -542,7 +574,7 @@ end
 * Avoid multi-line `?:` (the ternary operator), use `if/unless` instead.
 
 * Favor modifier `if/unless` usage when you have a single-line
-  body.
+  body. Avoid modifier `if/unless` otherwise.
 
 ``` ruby
 # bad
@@ -552,6 +584,11 @@ end
 
 # good
 do_something if some_condition
+
+# bad
+names.select! do |name|
+  name.start_with?("S")
+end unless some_condition
 ```
 
 * Never use `unless` with `else`. Rewrite these with the positive case first.
@@ -612,10 +649,6 @@ names.select do |name|
 end.map { |name| name.upcase }
 ```
 
-Some will argue that multiline chaining would look OK with the use of {...}, but they should
-ask themselves - is this code really readable and can't the block's contents be extracted into
-nifty methods? Don't just write clever or cute code.
-
 * Avoid `return` where not required.
 
 ``` ruby
@@ -627,6 +660,28 @@ end
 # good
 def some_method(some_arr)
   some_arr.size
+end
+```
+
+* Avoid use of nested conditionals for flow of control. Prefer a guard clause when you can assert invalid data. A guard clause is a conditional statement at the top of a function that bails out as soon as it can.
+
+```
+# bad
+def compute_thing(thing)
+  if thing[:foo]
+    update_with_bar(thing[:foo])
+    do_more_stuff
+    yay_code
+  end
+end
+
+# good
+def compute_thing(thing)
+  return unless thing[:foo]
+
+  update_with_bar(thing[:foo])
+  do_more_stuff
+  yay_code
 end
 ```
 
@@ -713,3 +768,10 @@ result = hash.map { |_, v| v + 1 }
   Instead, use `is_a?` or `kind_of?` if you must.
 
   Refactoring is even better. It's worth looking hard at any code that explicitly checks types.
+
+---
+Follow-on: Advice for Robust Ruby and Rails Code.
+
+* `Hash#fetch` from Shopify styleguide
+* Use "squiggly heredoc" syntax, which has the same semantics as `strip_heredoc` from Rails.
+* Use `Regexp#match` instead of `=~`
