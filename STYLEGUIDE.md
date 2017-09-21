@@ -2,7 +2,7 @@
 
 * Use soft-tabs with a two space indent.
 
-* Keep each line of code to a readable length. Unless you have a reason to, keep lines to fewer than 100 characters.
+* Keep each line of code to a readable length. Unless you have a reason to, keep lines to fewer than 120 characters.
 
 * Never leave trailing whitespace.
 
@@ -97,7 +97,7 @@ Parent.print_class_var # => will print "child"
     class variable. Class instance variables should usually be preferred
     over class variables.
 
-* Use `def self.method` to define singleton methods. This makes the methods
+* Use `def self.method` to define class/singleton methods. This makes the methods
   more resistant to refactoring changes.
 
 ``` ruby
@@ -188,12 +188,22 @@ STATES = ["draft", "open", "closed"]
 STATES = %w(draft open closed)
 ```
 
+* Prefer `%i` to the literal array syntax when you need an array of symbols (and you don't need to maintain Ruby 1.9 compatibility).
+
+``` ruby
+# bad
+STATES = [:draft, :open, :closed]
+
+# good
+STATES = %i(draft open closed)
+```
+
 * Use `Set` instead of `Array` when dealing with unique elements. `Set`
   implements a collection of unordered values with no duplicates. This
   is a hybrid of `Array`'s intuitive inter-operation facilities and
   `Hash`'s fast lookup.
 
-* Use symbols instead of strings as hash keys.
+* Prefer symbols instead of strings as hash keys.
 
 ``` ruby
 # bad
@@ -201,27 +211,6 @@ hash = { "one" => 1, "two" => 2, "three" => 3 }
 
 # good
 hash = { one: 1, two: 2, three: 3 }
-```
-
-## Documentation
-
-Use [TomDoc](http://tomdoc.org) to the best of your ability. It's pretty sweet:
-
-``` ruby
-# Public: Duplicate some text an arbitrary number of times.
-#
-# text  - The String to be duplicated.
-# count - The Integer number of times to duplicate the text.
-#
-# Examples
-#
-#   multiplex("Tom", 4)
-#   # => "TomTomTomTom"
-#
-# Returns the duplicated String.
-def multiplex(text, count)
-  text * count
-end
 ```
 
 ## Exceptions
@@ -314,6 +303,7 @@ hsh = {
 [Keyword arguments](http://magazine.rubyist.net/?Ruby200SpecialEn-kwarg) are recommended but not required when a method's arguments may otherwise be opaque or non-obvious when called. Additionally, prefer them over the old "Hash as pseudo-named args" style from pre-2.0 ruby.
 
 So instead of this:
+
 ``` ruby
 def remove_member(user, skip_membership_check=false)
   # ...
@@ -324,6 +314,7 @@ remove_member(user, true)
 ```
 
 Do this, which is much clearer.
+
 ``` ruby
 def remove_member(user, skip_membership_check: false)
   # ...
@@ -351,14 +342,14 @@ remove_member user, skip_membership_check: true
 
 ## Percent Literals
 
-* Use `%w` freely.
+* Use `%w` and `%i` freely for arrays of strings and symbols.
 
 ``` ruby
 STATES = %w(draft open closed)
 ```
 
 * Use `%()` for single-line strings which require both interpolation
-  and embedded double-quotes. For multi-line strings, prefer heredocs.
+  and embedded double-quotes. For multi-line strings, use heredocs.
 
 ``` ruby
 # bad (no interpolation needed)
@@ -375,20 +366,6 @@ STATES = %w(draft open closed)
 
 # good (requires interpolation, has quotes, single line)
 %(<tr><td class="name">#{name}</td>)
-```
-
-* Use `%r` only for regular expressions matching *more than* one '/' character.
-
-``` ruby
-# bad
-%r(\s+)
-
-# still bad
-%r(^/(.*)$)
-# should be /^\/(.*)$/
-
-# good
-%r(^/blog/2011/(.*)$)
 ```
 
 ## Regular Expressions
@@ -485,6 +462,36 @@ paragraphs.each do |paragraph|
 end
 ```
 
+## Numerics
+
+* Add underscores to large numeric literals to improve their readability.
+
+```
+# bad - how many 0s are there?
+num = 1000000
+
+# good - much easier to parse for the human brain
+num = 1_000_000
+```
+
+* Prefer smallcase letters for numeric literal prefixes. `0o` for octal, `0x` for hexadecimal and `0b` for binary. Do not use `0d` prefix for decimal literals.
+
+```
+# bad
+num = 01234
+num = 0O1234
+num = 0X12AB
+num = 0B10101
+num = 0D1234
+num = 0d1234
+
+# good - easier to separate digits from the prefix
+num = 0o1234
+num = 0x12AB
+num = 0b10101
+num = 1234
+```
+
 ## Syntax
 
 * Use `def` with parentheses when there are arguments. Omit the
@@ -565,7 +572,7 @@ end
 * Avoid multi-line `?:` (the ternary operator), use `if/unless` instead.
 
 * Favor modifier `if/unless` usage when you have a single-line
-  body.
+  body. Avoid modifier `if/unless` otherwise.
 
 ``` ruby
 # bad
@@ -575,6 +582,11 @@ end
 
 # good
 do_something if some_condition
+
+# bad
+names.select! do |name|
+  name.start_with?("S")
+end unless some_condition
 ```
 
 * Never use `unless` with `else`. Rewrite these with the positive case first.
@@ -635,10 +647,6 @@ names.select do |name|
 end.map { |name| name.upcase }
 ```
 
-    Some will argue that multiline chaining would look OK with the use of {...}, but they should
-    ask themselves - is this code really readable and can't the block's contents be extracted into
-    nifty methods?
-
 * Avoid `return` where not required.
 
 ``` ruby
@@ -650,6 +658,28 @@ end
 # good
 def some_method(some_arr)
   some_arr.size
+end
+```
+
+* Avoid use of nested conditionals for flow of control. Prefer a guard clause when you can assert invalid data. A guard clause is a conditional statement at the top of a function that bails out as soon as it can.
+
+```
+# bad
+def compute_thing(thing)
+  if thing[:foo]
+    update_with_bar(thing[:foo])
+    do_more_stuff
+    yay_code
+  end
+end
+
+# good
+def compute_thing(thing)
+  return unless thing[:foo]
+
+  update_with_bar(thing[:foo])
+  do_more_stuff
+  yay_code
 end
 ```
 
@@ -736,3 +766,10 @@ result = hash.map { |_, v| v + 1 }
   Instead, use `is_a?` or `kind_of?` if you must.
 
   Refactoring is even better. It's worth looking hard at any code that explicitly checks types.
+
+---
+Follow-on: Advice for Robust Ruby and Rails Code.
+
+* `Hash#fetch` from Shopify styleguide
+* Use "squiggly heredoc" syntax, which has the same semantics as `strip_heredoc` from Rails.
+* Use `Regexp#match` instead of `=~`
