@@ -75,7 +75,9 @@ end
 ## Classes
 
 * Avoid the usage of class (`@@`) variables due to their unusual behavior
-in inheritance.
+in inheritance. All of the classes in a class hierarchy actually share one
+class variable. Class instance variables should usually be preferred over 
+class variables.
 
 ``` ruby
 class Parent
@@ -92,10 +94,6 @@ end
 
 Parent.print_class_var # => will print "child"
 ```
-
-    As you can see all the classes in a class hierarchy actually share one
-    class variable. Class instance variables should usually be preferred
-    over class variables.
 
 * Use `def self.method` to define class/singleton methods. This makes the methods
   more resistant to refactoring changes.
@@ -178,7 +176,7 @@ end
 ## Collections
 
 * Prefer `%w` to the literal array syntax when you need an array of
-strings.
+words.
 
 ``` ruby
 # bad
@@ -188,7 +186,8 @@ STATES = ["draft", "open", "closed"]
 STATES = %w(draft open closed)
 ```
 
-* Prefer `%i` to the literal array syntax when you need an array of symbols (and you don't need to maintain Ruby 1.9 compatibility).
+* Prefer `%i` to the literal array syntax when you need an array of symbols 
+  (and you don't need to maintain Ruby 1.9 compatibility).
 
 ``` ruby
 # bad
@@ -233,22 +232,33 @@ else
 end
 ```
 
-* Rescue specific exceptions, not `StandardError` or its superclasses.
+* Don't rescue the `Exception` class, which traps signals and calls to exit, 
+  requiring you to kill -9 the process. Avoid rescuing `StandardError`, which 
+  can hide the root cause of an error. Prefer to rescue specific exceptions.
 
 ``` ruby
 # bad
 begin
   # an exception occurs here
-rescue
-  # exception handling
-end
-
-# still bad
-begin
-  # an exception occurs here
 rescue Exception
   # exception handling
 end
+
+# still bad (usually)
+begin
+  # an exception occurs here
+rescue
+  # rescue with no parameter captures StandardError
+  # this can hide errors/bugs that could otherwise be resolved
+end
+
+# good
+begin
+  Integer("taco")
+rescue ArgumentError => error
+  # exception handling
+end
+
 ```
 
 ## Hashes
@@ -256,16 +266,16 @@ end
 Use the Ruby 1.9 syntax for hash literals when all the keys are symbols:
 
 ``` ruby
-# good
-user = {
-  login: "defunkt",
-  name: "Chris Wanstrath"
-}
-
 # bad
 user = {
   :login => "defunkt",
   :name => "Chris Wanstrath"
+}
+
+# good
+user = {
+  login: "defunkt",
+  name: "Chris Wanstrath"
 }
 
 ```
@@ -273,39 +283,42 @@ user = {
 Use the 1.9 syntax when calling a method with Hash options arguments or named arguments:
 
 ``` ruby
-# good
-user = User.create(login: "jane")
-link_to("Account", controller: "users", action: "show", id: user)
-
 # bad
 user = User.create(:login => "jane")
 link_to("Account", :controller => "users", :action => "show", :id => user)
+
+# good
+user = User.create(login: "jane")
+link_to("Account", controller: "users", action: "show", id: user)
 ```
 
-If you have a hash with mixed key types, use the legacy hashrocket style to avoid mixing styles within the same hash:
+Avoid using hash literals with mixed key types. If you must, use the legacy hashrocket 
+style to avoid mixing styles within the same hash:
 
 ``` ruby
-# good
-hsh = {
-  :user_id => 55,
-  "followers-count" => 1000
-}
-
 # bad
 hsh = {
   user_id: 55,
+  "followers-count" => 1000
+}
+
+# good
+hsh = {
+  :user_id => 55,
   "followers-count" => 1000
 }
 ```
 
 ## Keyword Arguments
 
-[Keyword arguments](http://magazine.rubyist.net/?Ruby200SpecialEn-kwarg) are recommended but not required when a method's arguments may otherwise be opaque or non-obvious when called. Additionally, prefer them over the old "Hash as pseudo-named args" style from pre-2.0 ruby.
+Keyword arguments are recommended but not required when a method's arguments may otherwise be 
+opaque or non-obvious when called. Additionally, prefer them over the old "Hash as pseudo-named 
+args" style from pre-2.0 ruby.
 
 So instead of this:
 
 ``` ruby
-def remove_member(user, skip_membership_check=false)
+def remove_member(user, skip_membership_check = false)
   # ...
 end
 
@@ -337,12 +350,41 @@ remove_member user, skip_membership_check: true
   should end in a question mark. (i.e. `Array#empty?`).
 
 * The names of potentially "dangerous" methods (i.e. methods that modify `self` or the
-  arguments, `exit!`, etc.) should end with an exclamation mark. Bang methods
-  should only exist if a non-bang method exists. ([More on this](http://dablog.rubypal.com/2007/8/15/bang-methods-or-danger-will-rubyist)).
+  arguments, raise on failure, `exit!`, etc.) should end with an exclamation mark.
+
+## Numerics
+
+* Add underscores to large numeric literals to improve their readability.
+
+```
+# bad - how many 0s are there?
+num = 1000000
+
+# good - much easier to parse for the human brain
+num = 1_000_000
+```
+
+* Prefer smallcase letters for numeric literal prefixes. `0o` for octal, `0x` for hexadecimal and `0b` for binary. Do not use `0d` prefix for decimal literals.
+
+```
+# bad
+num = 01234 # leading zeros are interpreted as octal!
+num = 0O1234
+num = 0X12AB
+num = 0B10101
+num = 0D1234
+num = 0d1234
+
+# good - easier to separate digits from the prefix
+num = 0o1234
+num = 0x12AB
+num = 0b10101
+num = 1234
+```
 
 ## Percent Literals
 
-* Use `%w` and `%i` freely for arrays of strings and symbols.
+* Use `%w` and `%i` freely for arrays of words and symbols.
 
 ``` ruby
 STATES = %w(draft open closed)
@@ -462,36 +504,6 @@ paragraphs.each do |paragraph|
 end
 ```
 
-## Numerics
-
-* Add underscores to large numeric literals to improve their readability.
-
-```
-# bad - how many 0s are there?
-num = 1000000
-
-# good - much easier to parse for the human brain
-num = 1_000_000
-```
-
-* Prefer smallcase letters for numeric literal prefixes. `0o` for octal, `0x` for hexadecimal and `0b` for binary. Do not use `0d` prefix for decimal literals.
-
-```
-# bad
-num = 01234
-num = 0O1234
-num = 0X12AB
-num = 0B10101
-num = 0D1234
-num = 0d1234
-
-# good - easier to separate digits from the prefix
-num = 0o1234
-num = 0x12AB
-num = 0b10101
-num = 1234
-```
-
 ## Syntax
 
 * Use `def` with parentheses when there are arguments. Omit the
@@ -556,6 +568,9 @@ result = some_condition ? something : something_else
   `if/else` constructs in these cases.
 
 ``` ruby
+# bad
+some_condition ? (nested_something; another_nested_something) : something_else
+
 # bad
 some_condition ? (nested_condition ? nested_something : nested_something_else) : something_else
 
@@ -628,7 +643,7 @@ end
   when chaining.
 
 ``` ruby
-names = ["Bozhidar", "Steve", "Sarah"]
+names = ["Bozhidar", "Steve", "Sarah", "Jim Bob"]
 
 # good
 names.each { |name| puts name }
@@ -697,22 +712,6 @@ def some_method(arg1 = :default, arg2 = nil, arg3 = [])
 end
 ```
 
-While several Ruby books suggest the first style, the second is much more prominent
-in practice (and arguably a bit more readable).
-
-* Using the return value of `=` (an assignment) is ok.
-
-``` ruby
-# bad
-if (v = array.grep(/foo/)) ...
-
-# good
-if v = array.grep(/foo/) ...
-
-# also good - has correct precedence.
-if (v = next_value) == "hello" ...
-```
-
 * Use `||=` freely to initialize variables.
 
 ``` ruby
@@ -760,16 +759,12 @@ result = hash.map { |k, v| v + 1 }
 result = hash.map { |_, v| v + 1 }
 ```
 
-* Don't use the `===` (threequals) operator to check types. `===` is mostly an
-  implementation detail to support Ruby features like `case`, and it's not commutative.
-  For example, `String === "hi"` is true and `"hi" === String` is false.
-  Instead, use `is_a?` or `kind_of?` if you must.
-
-  Refactoring is even better. It's worth looking hard at any code that explicitly checks types.
-
 ---
 Follow-on: Advice for Robust Ruby and Rails Code.
 
 * `Hash#fetch` from Shopify styleguide
 * Use "squiggly heredoc" syntax, which has the same semantics as `strip_heredoc` from Rails.
 * Use `Regexp#match` instead of `=~`
+* Using the return value of an assignment (in conditionals, etc)
+* `===`, `is_a?` and `kind_of?`
+* Method visibility modifiers: `protected` vs `private`
