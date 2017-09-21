@@ -2,7 +2,7 @@
 
 * Use soft-tabs with a two space indent.
 
-* Keep each line of code to a readable length. Unless you have a reason to, keep lines to fewer than 100 characters.
+* Keep each line of code to a readable length. Unless you have a reason to, keep lines to fewer than 120 characters.
 
 * Never leave trailing whitespace.
 
@@ -215,7 +215,7 @@ hash = { one: 1, two: 2, three: 3 }
 
 ## Exceptions
 
-* Don't use exceptions for flow control.
+* Don't use exceptions for flow of control.
 
 ``` ruby
 # bad
@@ -461,8 +461,6 @@ paragraphs.each do |paragraph|
   html << "<p>#{paragraph}</p>"
 end
 ```
-
-* For multi-line strings, use heredocs.
 
 ## Numerics
 
