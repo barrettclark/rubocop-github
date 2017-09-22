@@ -247,8 +247,7 @@ end
 # still bad (usually)
 begin
   # an exception occurs here
-rescue
-  # rescue with no parameter captures StandardError
+rescue StandardError
   # this can hide errors/bugs that could otherwise be resolved
 end
 
@@ -259,6 +258,26 @@ rescue ArgumentError => error
   # exception handling
 end
 
+```
+
+* Use implicit begin blocks where possible.
+
+``` ruby
+# bad
+def foo
+  begin
+    # logic
+  rescue
+    # exception handling
+  end
+end
+
+# good
+def foo
+  # logic
+rescue
+  # exception handling
+end
 ```
 
 ## Hashes
